@@ -26,6 +26,7 @@ struct pms5003data data;
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 unsigned long updateTime = 0;
+FSInfo fs_info;
 
 void sendMessage()
   {
@@ -114,10 +115,19 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType 
   }
 }
 
+unsigned long FreeDiskSpace(){
+  LittleFS.info(fs_info);
+  return fs_info.totalBytes - fs_info.usedBytes;
+}
+
 void setup() {
   Serial.begin(9600); //9600 for PMS5003
   initWiFi();
   LittleFS.begin();
+
+  Serial.print("Free Disk Space ");
+  Serial.println(FreeDiskSpace());
+
   ws.onEvent(onEvent);
   server.addHandler(&ws);
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
@@ -126,7 +136,6 @@ void setup() {
   server.serveStatic("/", LittleFS, "/");
   server.begin();
 }
-
 void loop() {
   if (updateTime < millis()) {
       sendMessage();
