@@ -1,7 +1,36 @@
-// Get current sensor readings when the page loads  
-window.addEventListener('load', getReadings);
+var gateway = `ws://${window.location.hostname}/ws`;
+var websocket;
 
-// Create Temperature Chart
+window.addEventListener('load', onload);
+function onload(event) {
+    initWebSocket();
+}
+function initWebSocket() {
+    console.log('Trying to open a WebSocket connection');
+    websocket = new WebSocket(gateway);
+    websocket.onopen = onOpen;
+    websocket.onclose = onClose;
+    websocket.onmessage = onMessage;
+}
+function onOpen(event) {
+    console.log('Connection opened');   
+}
+function onClose(event) {
+    console.log('Connection closed');
+    setTimeout(initWebSocket, 2000);
+}
+function onMessage(event) {
+    var jsonReceived = JSON.parse(event.data);
+    //set objects on webpage after receiving message from server
+    console.log('Browser received message');
+    console.log(event.data);
+    plotPMS10(jsonReceived.PMS10);
+    plotPMS25(jsonReceived.PMS25);
+    plotPMS100(jsonReceived.PMS100);
+
+}
+
+// Create PMS1.0 Chart
 var chartPMS10 = new Highcharts.Chart({
   chart:{ renderTo:'chart-PMS10' },
   series: [{
@@ -23,7 +52,7 @@ var chartPMS10 = new Highcharts.Chart({
   credits: { enabled: false }
 });
   
-// Create Humidity Chart
+// Create PMS2.5 Chart
 var chartPMS25 = new Highcharts.Chart({
   chart:{ renderTo:'chart-PMS25' },
   series: [{
@@ -46,7 +75,7 @@ var chartPMS25 = new Highcharts.Chart({
   credits: { enabled: false }
 });
 
-// Create Humidity Chart
+// Create PMS10 Chart
 var chartPMS100 = new Highcharts.Chart({
   chart:{ renderTo:'chart-PMS100' },
   series: [{
@@ -100,50 +129,4 @@ function plotPMS100(value) {
   } else {
     chartPMS100.series[0].addPoint([x, y], true, false, true);
   }
-}
-
-// Function to get current readings on the webpage when it loads for the first time
-function getReadings() {
-  var xhr = new XMLHttpRequest();
-  xhr.onreadystatechange = function() {
-    if (this.readyState == 4 && this.status == 200) {
-      var myObj = JSON.parse(this.responseText);
-      console.log(myObj);
-      var PMS10 = myObj.PMS10;
-      var PMS25 = myObj.PMS25;
-      var PMS100 = myObj.PMS100;
-      plotPMS10(PMS10);
-      plotPMS25(PMS25);
-      plotPMS100(PMS100);
-    }
-  }; 
-  xhr.open("GET", "/readings", true);
-  xhr.send();
-}
-
-if (!!window.EventSource) {
-  var source = new EventSource('/events');
-  
-  source.addEventListener('open', function(e) {
-    console.log("Events Connected");
-  }, false);
-
-  source.addEventListener('error', function(e) {
-    if (e.target.readyState != EventSource.OPEN) {
-      console.log("Events Disconnected");
-    }
-  }, false);
-  
-  source.addEventListener('message', function(e) {
-    console.log("message", e.data);
-  }, false);
-  
-  source.addEventListener('new_readings', function(e) {
-    console.log("new_readings", e.data);
-    var myObj = JSON.parse(e.data);
-    console.log(myObj);
-    plotPMS10(myObj.PMS10);
-    plotPMS25(myObj.PMS25);
-    plotPMS100(myObj.PMS100);
-  }, false);
 }
