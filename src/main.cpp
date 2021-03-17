@@ -22,7 +22,7 @@ struct pms5003data {
   uint16_t unused;
   uint16_t checksum;
 };
-struct pms5003data data;
+struct pms5003data dataP;
 
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
@@ -33,9 +33,9 @@ void sendMessage()
   {
       StaticJsonDocument<100> jsonSend;
       //set up message from IO and send to browser(s)
-      jsonSend["PMS10"] = data.pm10_standard;
-      jsonSend["PMS25"] =  data.pm25_standard;
-      jsonSend["PMS100"] = data.pm100_standard;
+      jsonSend["PMS10"] = dataP.pm10_standard;
+      jsonSend["PMS25"] =  dataP.pm25_standard;
+      jsonSend["PMS100"] = dataP.pm100_standard;
       String jsonString;
       serializeJson(jsonSend,jsonString);
       ws.textAll(jsonString);
@@ -73,8 +73,8 @@ boolean readPMSdata() {
     buffer_u16[i] = buffer[2 + i*2 + 1];
     buffer_u16[i] += (buffer[2 + i*2] << 8);
   }
-  memcpy((void *)&data, (void *)buffer_u16, 30);
-  if (sum != data.checksum) {
+  memcpy((void *)&dataP, (void *)buffer_u16, 30);
+  if (sum != dataP.checksum) {
     Serial.println("Checksum failure");
     return false;
   }
@@ -86,13 +86,14 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
   if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) { 
     data[len] = 0;
     StaticJsonDocument<100> jsonReceived;
-    Serial.println((char*) data);
     deserializeJson(jsonReceived,(char*)data);
-     // setup IO from message received
-     String ReadingTime = jsonReceived["ReadingTime"];
-     Serial.println(ReadingTime); 
-        //digitalWrite(D0,jsonReceived["D0"]);
-        //digitalWrite(D1,jsonReceived["D1"]);     
+     // add readings to json object 
+    jsonReceived["PMS10"] = dataP.pm10_standard;
+    jsonReceived["PMS25"] =  dataP.pm25_standard;
+    jsonReceived["PMS100"] = dataP.pm100_standard;
+    String jsonString;
+    serializeJson(jsonReceived,jsonString);
+    ws.textAll(jsonString);
   }
 }
 
@@ -100,7 +101,7 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType 
  switch (type) {
     case WS_EVT_CONNECT:
       Serial.printf("WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
-      sendMessage();
+      //sendMessage();
       break;
     case WS_EVT_DISCONNECT:
       Serial.printf("WebSocket client #%u disconnected\n", client->id());
@@ -155,10 +156,10 @@ void setup() {
   server.begin();
 }
 void loop() {
-  if (updateTime < millis()) {
-      sendMessage();
-      updateTime += 10000;  //send update every 30 seconds
-  }
+  //if (updateTime < millis()) {
+  //    sendMessage();
+  //    updateTime += 10000;  //send update every 30 seconds
+  //}
   readPMSdata();
   ws.cleanupClients();
 }

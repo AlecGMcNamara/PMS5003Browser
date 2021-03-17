@@ -26,20 +26,18 @@ function onMessage(event) {
     //set objects on webpage after receiving message from server
     console.log('Browser received message');
     console.log(jsonReceived);
-    plotPMS10(jsonReceived.PMS10);
-    plotPMS25(jsonReceived.PMS25);
-    plotPMS100(jsonReceived.PMS100);
+    plotPMS10(jsonReceived.ReadingTime, jsonReceived.PMS10);
+    plotPMS25(jsonReceived.ReadingTime, jsonReceived.PMS25);
+    plotPMS100(jsonReceived.ReadingTime, jsonReceived.PMS100);
 }
 function sendMessage(event) 
 {
     websocket.send(sendJSONstring());
-    console.log(sendJSONstring);
     console.log('Browser sent message');
 }
 function sendJSONstring(){
     //set up JSON message before sending mesage to server
-    var DateRequest = new Date().getTime();
-    var jsonSend = {"ReadingTime": DateRequest }; //calibrate level
+    var jsonSend = {"ReadingTime":(String)(new Date().getTime()) }; //send readings
     console.log(jsonSend);
     return(JSON.stringify(jsonSend));   
 }
@@ -113,19 +111,19 @@ var chartPMS100 = new Highcharts.Chart({
 });
 
 //Plot chart PMS10
-function plotPMS10(value) {
-  var x = (new Date()).getTime()
+function plotPMS10(date, value) {
+  var x = Number(date);
   var y = Number(value);
   if(chartPMS10.series[0].data.length > 80) {
-    chartPMS10.series[0].addPoint([x, y], true, true, true);
+    chartPMS10.series[0].addPoint([x,y], true, true, true);
   } else {
-    chartPMS10.series[0].addPoint([x, y], true, false, true);
+    chartPMS10.series[0].addPoint([x,y], true, false, true);
   }
 }
 
 //Plot chart PMS25
-function plotPMS25(value) {
-  var x = (new Date()).getTime()
+function plotPMS25(date, value) {
+  var x = Number(date);
   var y = Number(value);
   if(chartPMS25.series[0].data.length > 80) {
     chartPMS25.series[0].addPoint([x, y], true, true, true);
@@ -135,8 +133,8 @@ function plotPMS25(value) {
 }
 
 //Plot chart PMS100
-function plotPMS100(value) {
-  var x = (new Date()).getTime()
+function plotPMS100(date, value) {
+  var x = Number(date);
   var y = Number(value);
   if(chartPMS100.series[0].data.length > 80) {
     chartPMS100.series[0].addPoint([x, y], true, true, true);
