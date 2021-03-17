@@ -1,10 +1,12 @@
 var gateway = `ws://${window.location.hostname}/ws`;
 var websocket;
+setInterval(sendMessage, 10000);
 
 window.addEventListener('load', onload);
 function onload(event) {
     initWebSocket();
 }
+
 function initWebSocket() {
     console.log('Trying to open a WebSocket connection');
     websocket = new WebSocket(gateway);
@@ -27,6 +29,19 @@ function onMessage(event) {
     plotPMS10(jsonReceived.PMS10);
     plotPMS25(jsonReceived.PMS25);
     plotPMS100(jsonReceived.PMS100);
+}
+function sendMessage(event) 
+{
+    websocket.send(sendJSONstring());
+    console.log(sendJSONstring);
+    console.log('Browser sent message');
+}
+function sendJSONstring(){
+    //set up JSON message before sending mesage to server
+    var DateRequest = new Date().getTime();
+    var jsonSend = {"ReadingTime": DateRequest }; //calibrate level
+    console.log(jsonSend);
+    return(JSON.stringify(jsonSend));   
 }
 
 // Create PMS1.0 Chart

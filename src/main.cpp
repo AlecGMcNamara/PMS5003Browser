@@ -9,6 +9,7 @@
 #include <ESPAsyncWebServer.h>
 #include <LittleFS.h>
 #include <ArduinoJSON.h>
+#include <time.h>
 
 const char* ssid = "SKYPEMHG";
 const char* password = "8NHetSWQAJ75";
@@ -85,8 +86,11 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
   if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) { 
     data[len] = 0;
     StaticJsonDocument<100> jsonReceived;
+    Serial.println((char*) data);
     deserializeJson(jsonReceived,(char*)data);
      // setup IO from message received
+     String ReadingTime = jsonReceived["ReadingTime"];
+     Serial.println(ReadingTime); 
         //digitalWrite(D0,jsonReceived["D0"]);
         //digitalWrite(D1,jsonReceived["D1"]);     
   }
@@ -121,9 +125,9 @@ void setup() {
   LittleFS.begin();
   Serial.printf("File system free space :%lu bytes\n", FreeDiskSpace());
 
-  File fileTest;
+  /*File fileTest;
 
-  //LittleFS.remove("/data.txt");
+  LittleFS.remove("/data.txt");
 
   if(!LittleFS.exists("/data.txt")) {
       Serial.println("Data file missing");
@@ -140,7 +144,7 @@ void setup() {
         fileTest.close();
     }
 
-  
+  */
 
   ws.onEvent(onEvent);
   server.addHandler(&ws);
