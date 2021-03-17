@@ -23,7 +23,7 @@ function onMessage(event) {
     var jsonReceived = JSON.parse(event.data);
     //set objects on webpage after receiving message from server
     console.log('Browser received message');
-    console.log(event.data);
+    console.log(jsonReceived);
     plotPMS10(jsonReceived.PMS10);
     plotPMS25(jsonReceived.PMS25);
     plotPMS100(jsonReceived.PMS100);

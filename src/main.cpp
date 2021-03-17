@@ -1,6 +1,6 @@
 // PMS5003   NodeMCU
-//   VCC        Vin       +5V
-//   GND        GND        0V
+//   VCC        Vin (+5V)
+//   GND        GND
 //   TX         RX0        
 //Disconnect TX while programming via USB 
 #include <Arduino.h>
@@ -81,23 +81,18 @@ boolean readPMSdata() {
 }
 
 void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
-  /*
   AwsFrameInfo *info = (AwsFrameInfo*)arg;
   if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) { 
     data[len] = 0;
     StaticJsonDocument<100> jsonReceived;
     deserializeJson(jsonReceived,(char*)data);
      // setup IO from message received
-      digitalWrite(D0,jsonReceived["D0"]);
-      digitalWrite(D1,jsonReceived["D1"]);
-      //save pwm value, it cant be read back from IO pin
-      PWMTemp = jsonReceived["D4"];
-      analogWrite(D4,PWMTemp);
-  }*/
+        //digitalWrite(D0,jsonReceived["D0"]);
+        //digitalWrite(D1,jsonReceived["D1"]);     
+  }
 }
 
-void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type,
- void *arg, uint8_t *data, size_t len) {
+void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
  switch (type) {
     case WS_EVT_CONNECT:
       Serial.printf("WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
@@ -124,9 +119,28 @@ void setup() {
   Serial.begin(9600); //9600 for PMS5003
   initWiFi();
   LittleFS.begin();
+  Serial.printf("File system free space :%lu bytes\n", FreeDiskSpace());
 
-  Serial.print("Free Disk Space ");
-  Serial.println(FreeDiskSpace());
+  File fileTest;
+
+  //LittleFS.remove("/data.txt");
+
+  if(!LittleFS.exists("/data.txt")) {
+      Serial.println("Data file missing");
+      if(fileTest = LittleFS.open("/data.txt","w")) { 
+        Serial.println("Created data file");
+        fileTest.println("This is a write to file test.");
+        fileTest.close();
+      }
+  }
+  fileTest = LittleFS.open("/data.txt", "r");
+    if (fileTest){
+        Serial.print("Opened file...read...");
+        Serial.println(fileTest.readString());
+        fileTest.close();
+    }
+
+  
 
   ws.onEvent(onEvent);
   server.addHandler(&ws);
