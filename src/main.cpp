@@ -9,7 +9,6 @@
 #include <ESPAsyncWebServer.h>
 #include <LittleFS.h>
 #include <ArduinoJSON.h>
-#include <time.h>
 
 const char* ssid = "SKYPEMHG";
 const char* password = "8NHetSWQAJ75";
@@ -29,7 +28,7 @@ AsyncWebSocket ws("/ws");
 unsigned long updateTime = 0;
 FSInfo fs_info;
 
-void sendMessage()
+/*void sendMessage()
   {
       StaticJsonDocument<100> jsonSend;
       //set up message from IO and send to browser(s)
@@ -39,7 +38,7 @@ void sendMessage()
       String jsonString;
       serializeJson(jsonSend,jsonString);
       ws.textAll(jsonString);
-  }
+  }*/
 
 void initWiFi() {
   WiFi.mode(WIFI_STA);
@@ -87,7 +86,7 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
     data[len] = 0;
     StaticJsonDocument<100> jsonReceived;
     deserializeJson(jsonReceived,(char*)data);
-     // add readings to json object 
+     // add readings to json object already contains date+time
     jsonReceived["PMS10"] = dataP.pm10_standard;
     jsonReceived["PMS25"] =  dataP.pm25_standard;
     jsonReceived["PMS100"] = dataP.pm100_standard;
