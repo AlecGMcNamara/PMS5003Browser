@@ -153,7 +153,7 @@ void setup() {
 void loop() {
   if (updateTime < millis()) {
       sendMessage();
-      updateTime += 30000;  //send update every 30 seconds
+      updateTime += 10000;  //send update every 30 seconds
   }
   readPMSdata();
   ws.cleanupClients();

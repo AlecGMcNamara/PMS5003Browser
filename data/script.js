@@ -27,7 +27,6 @@ function onMessage(event) {
     plotPMS10(jsonReceived.PMS10);
     plotPMS25(jsonReceived.PMS25);
     plotPMS100(jsonReceived.PMS100);
-
 }
 
 // Create PMS1.0 Chart
@@ -39,7 +38,7 @@ var chartPMS10 = new Highcharts.Chart({
   title: { text: undefined},
   plotOptions: {
     line: { animation: false,
-      dataLabels: { enabled: true }
+      dataLabels: { enabled: false }
     }
   },
   xAxis: {
@@ -61,7 +60,7 @@ var chartPMS25 = new Highcharts.Chart({
   title: { text: undefined},
   plotOptions: {
     line: { animation: false,
-      dataLabels: { enabled: true }
+      dataLabels: { enabled: false }
     },
     series: { color: '#50b8b4' }
   },
@@ -84,7 +83,7 @@ var chartPMS100 = new Highcharts.Chart({
   title: { text: undefined},
   plotOptions: {
     line: { animation: false,
-      dataLabels: { enabled: true }
+      dataLabels: { enabled: false }
     },
     series: { color: '#50b8b4' }
   },
@@ -102,7 +101,7 @@ var chartPMS100 = new Highcharts.Chart({
 function plotPMS10(value) {
   var x = (new Date()).getTime()
   var y = Number(value);
-  if(chartPMS10.series[0].data.length > 40) {
+  if(chartPMS10.series[0].data.length > 80) {
     chartPMS10.series[0].addPoint([x, y], true, true, true);
   } else {
     chartPMS10.series[0].addPoint([x, y], true, false, true);
@@ -113,7 +112,7 @@ function plotPMS10(value) {
 function plotPMS25(value) {
   var x = (new Date()).getTime()
   var y = Number(value);
-  if(chartPMS25.series[0].data.length > 40) {
+  if(chartPMS25.series[0].data.length > 80) {
     chartPMS25.series[0].addPoint([x, y], true, true, true);
   } else {
     chartPMS25.series[0].addPoint([x, y], true, false, true);
@@ -124,7 +123,7 @@ function plotPMS25(value) {
 function plotPMS100(value) {
   var x = (new Date()).getTime()
   var y = Number(value);
-  if(chartPMS100.series[0].data.length > 40) {
+  if(chartPMS100.series[0].data.length > 80) {
     chartPMS100.series[0].addPoint([x, y], true, true, true);
   } else {
     chartPMS100.series[0].addPoint([x, y], true, false, true);
