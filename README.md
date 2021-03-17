@@ -10,8 +10,9 @@ Next steps :-
   Allow user to save data some how? (email?, webpage?)
   
 Problems discovered:-
-  PMS5003 needs 5+ to power the internal fan. 3.7v Batteries don't work
+  PMS5003 needs +5V to power the internal fan, a 3.7v battery doesn't work
   ElegantOTA crashed the web sockets when you try to read serial port
-  **PMS5003 TX connection blocks the Serial port** when uploading disconnect it
+  **PMS5003 TX connection to ESP RX pin** blocks you uploading the program,
+  disconnect it while programming.
   
   
