@@ -118,8 +118,7 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
 
   }
 }
-File fileTest;
-String fileName;
+
 void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
  switch (type) {
     case WS_EVT_CONNECT:
@@ -162,6 +161,9 @@ void setup() {
 }
 void loop() {
   readPMSdata();
+  
+  File fileTest;
+  String fileName;
   // redraw requested, by browser, send all data from file 0
   if(blRedraw){ 
     for(int rd=intFileNumber+1;rd<MAX_DATA_FILES;rd++){  
