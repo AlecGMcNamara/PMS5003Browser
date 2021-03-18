@@ -13,6 +13,8 @@
 const char* ssid = "SKYPEMHG";
 const char* password = "8NHetSWQAJ75";
 
+#define MAX_DATA_FILES 80    //0-79
+
 struct pms5003data {
   uint16_t framelen;
   uint16_t pm10_standard, pm25_standard, pm100_standard;
@@ -27,18 +29,20 @@ AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 unsigned long updateTime = 0;
 FSInfo fs_info;
+int intFileNumber =0;
+bool blRedraw = false;
 
-/*void sendMessage()
-  {
-      StaticJsonDocument<100> jsonSend;
-      //set up message from IO and send to browser(s)
-      jsonSend["PMS10"] = dataP.pm10_standard;
-      jsonSend["PMS25"] =  dataP.pm25_standard;
-      jsonSend["PMS100"] = dataP.pm100_standard;
-      String jsonString;
-      serializeJson(jsonSend,jsonString);
-      ws.textAll(jsonString);
-  }*/
+String getFileName(int tempFileNumber){
+
+  char tempFileName[10];
+  sprintf(tempFileName,"/data.%03d", tempFileNumber);
+  return tempFileName;
+}
+
+unsigned long FreeDiskSpace(){
+  LittleFS.info(fs_info);
+  return fs_info.totalBytes - fs_info.usedBytes;
+}
 
 void initWiFi() {
   WiFi.mode(WIFI_STA);
@@ -83,6 +87,8 @@ boolean readPMSdata() {
 void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
   AwsFrameInfo *info = (AwsFrameInfo*)arg;
   if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) { 
+    
+    if (!blRedraw) {
     data[len] = 0;
     StaticJsonDocument<100> jsonReceived;
     deserializeJson(jsonReceived,(char*)data);
@@ -90,17 +96,35 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
     jsonReceived["PMS10"] = dataP.pm10_standard;
     jsonReceived["PMS25"] =  dataP.pm25_standard;
     jsonReceived["PMS100"] = dataP.pm100_standard;
+
+    //debug info can be
+    jsonReceived["NextFileNumber"] = intFileNumber;
+    jsonReceived["Free FS space"] = FreeDiskSpace();
+
     String jsonString;
     serializeJson(jsonReceived,jsonString);
     ws.textAll(jsonString);
+    
+    //write data file to flash filename /data.000-/data.099
+    File fileTest;
+    String fileName = getFileName(intFileNumber);
+    if(fileTest = LittleFS.open(fileName,"w")) { 
+        fileTest.println(jsonString);
+        fileTest.close();
+        intFileNumber++;
+        if(intFileNumber >= MAX_DATA_FILES) intFileNumber = 0;
+    }
+    }
+
   }
 }
-
+File fileTest;
+String fileName;
 void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
  switch (type) {
     case WS_EVT_CONNECT:
       Serial.printf("WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
-      //sendMessage();
+      blRedraw = true; //browser refreshed, redraw all chart
       break;
     case WS_EVT_DISCONNECT:
       Serial.printf("WebSocket client #%u disconnected\n", client->id());
@@ -114,38 +138,20 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType 
   }
 }
 
-unsigned long FreeDiskSpace(){
-  LittleFS.info(fs_info);
-  return fs_info.totalBytes - fs_info.usedBytes;
-}
-
 void setup() {
   Serial.begin(9600); //9600 for PMS5003
   initWiFi();
   LittleFS.begin();
   Serial.printf("File system free space :%lu bytes\n", FreeDiskSpace());
 
-  /*File fileTest;
-
-  LittleFS.remove("/data.txt");
-
-  if(!LittleFS.exists("/data.txt")) {
-      Serial.println("Data file missing");
-      if(fileTest = LittleFS.open("/data.txt","w")) { 
-        Serial.println("Created data file");
-        fileTest.println("This is a write to file test.");
-        fileTest.close();
-      }
+  //delete all data files /data.000 to /data.079
+  Serial.print("Deleting old data.....");
+  for (intFileNumber=0;intFileNumber < MAX_DATA_FILES;intFileNumber++){
+      LittleFS.remove(getFileName(intFileNumber));
   }
-  fileTest = LittleFS.open("/data.txt", "r");
-    if (fileTest){
-        Serial.print("Opened file...read...");
-        Serial.println(fileTest.readString());
-        fileTest.close();
-    }
-
-  */
-
+  intFileNumber = 0;
+  Serial.println("done.");
+  
   ws.onEvent(onEvent);
   server.addHandler(&ws);
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
@@ -155,10 +161,29 @@ void setup() {
   server.begin();
 }
 void loop() {
-  //if (updateTime < millis()) {
-  //    sendMessage();
-  //    updateTime += 10000;  //send update every 30 seconds
-  //}
   readPMSdata();
+  // redraw requested, by browser, send all data from file 0
+  if(blRedraw){ 
+    for(int rd=intFileNumber+1;rd<MAX_DATA_FILES;rd++){  
+        fileName = getFileName(rd);
+        fileTest = LittleFS.open(fileName, "r");
+        if (fileTest){
+            ws.textAll(fileTest.readString());
+            delay(100); //needed to add delay or losing data
+            fileTest.close();
+        }
+      }
+    for(int rd=0;rd<intFileNumber;rd++){  
+        fileName = getFileName(rd);
+        fileTest = LittleFS.open(fileName, "r");
+        if (fileTest){
+            ws.textAll(fileTest.readString());
+            delay(100); //needed to add delay or losing data
+            fileTest.close();
+        }
+      }
+  
+      blRedraw = false;
+  }
   ws.cleanupClients();
 }

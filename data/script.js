@@ -52,7 +52,8 @@ var chartPMS10 = new Highcharts.Chart({
   plotOptions: {
     line: { animation: false,
       dataLabels: { enabled: false }
-    }
+    },
+    series: { color: '#50b8b4' }
   },
   xAxis: {
     type: 'datetime',
@@ -114,7 +115,7 @@ var chartPMS100 = new Highcharts.Chart({
 function plotPMS10(date, value) {
   var x = Number(date);
   var y = Number(value);
-  if(chartPMS10.series[0].data.length > 80) {
+  if(chartPMS10.series[0].data.length > 100) {
     chartPMS10.series[0].addPoint([x,y], true, true, true);
   } else {
     chartPMS10.series[0].addPoint([x,y], true, false, true);
@@ -125,7 +126,7 @@ function plotPMS10(date, value) {
 function plotPMS25(date, value) {
   var x = Number(date);
   var y = Number(value);
-  if(chartPMS25.series[0].data.length > 80) {
+  if(chartPMS25.series[0].data.length > 100) {
     chartPMS25.series[0].addPoint([x, y], true, true, true);
   } else {
     chartPMS25.series[0].addPoint([x, y], true, false, true);
@@ -136,7 +137,7 @@ function plotPMS25(date, value) {
 function plotPMS100(date, value) {
   var x = Number(date);
   var y = Number(value);
-  if(chartPMS100.series[0].data.length > 80) {
+  if(chartPMS100.series[0].data.length > 100) {
     chartPMS100.series[0].addPoint([x, y], true, true, true);
   } else {
     chartPMS100.series[0].addPoint([x, y], true, false, true);
