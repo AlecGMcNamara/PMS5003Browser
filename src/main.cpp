@@ -27,13 +27,11 @@ struct pms5003data dataP;
 
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
-unsigned long updateTime = 0;
 FSInfo fs_info;
 int intFileNumber =0;
 bool blRedraw = false;
 
 String getFileName(int tempFileNumber){
-
   char tempFileName[10];
   sprintf(tempFileName,"/data.%03d", tempFileNumber);
   return tempFileName;
@@ -54,6 +52,7 @@ void initWiFi() {
   }
   Serial.println(WiFi.localIP());
 }
+
 boolean readPMSdata() {
   if (!Serial.available()) {
     return false;
@@ -92,7 +91,7 @@ void ChartRedraw(){
   unsigned long tempRecordTime=0;
   StaticJsonDocument <100> jsonRedraw;
   String strJsonReDraw;
-  // redraw requested, by browser, send all data from file 0
+  // redraw requested, by browser, send all recorded data
   if(blRedraw && ws.availableForWriteAll()){ 
       if(!ReDrawing){
         ReDrawing=true;
@@ -106,7 +105,7 @@ void ChartRedraw(){
         deserializeJson(jsonRedraw,strJsonReDraw);
         tempRecordTime =jsonRedraw["ReadingTime"];
         jsonRedraw["ReadingTime"] = long(tempRecordTime - millis());
-        strJsonReDraw="";// clear string or serialize function appends the string!!!
+        strJsonReDraw="";// clear string or serialize function appends!!!
         serializeJson(jsonRedraw,strJsonReDraw);
         ws.textAll(strJsonReDraw);
         //Serial.print("Redrawing:"); Serial.println(strJsonReDraw);
@@ -120,14 +119,12 @@ void ChartRedraw(){
       }
   }
 }
-
 void sendMessage()
 {
   static unsigned long nextSendDue = 0;
   if (!blRedraw && nextSendDue < millis() && ws.availableForWriteAll())
   {
     StaticJsonDocument<100> jsonSend;
-    // add readings to json object already contains date+time
     jsonSend["ReadingTime"] = 0;
     jsonSend["PMS10"] = dataP.pm10_standard;
     jsonSend["PMS25"] = dataP.pm25_standard;
@@ -137,12 +134,9 @@ void sendMessage()
     serializeJson(jsonSend, strJsonSend);
    // Serial.print("Sending Message:");    Serial.println(strJsonSend);
     ws.textAll(strJsonSend);
-
     //write data file to flash filename /data.000-/data.099
-    
     jsonSend["ReadingTime"] = long(millis());
-
-    strJsonSend = "";
+    strJsonSend = ""; //clear string of next json string is appended!!!!
     serializeJson(jsonSend, strJsonSend);
     File fileWrite;
     String fileName = getFileName(intFileNumber);
@@ -162,6 +156,7 @@ void sendMessage()
 void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
   AwsFrameInfo *info = (AwsFrameInfo*)arg;
   if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {   
+      // browser not sending any messages
   }
 }
 
