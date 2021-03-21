@@ -6,7 +6,6 @@ Redeveloped project using Web Sockets. For me this method is very fast, reliable
 Connection details at the top of the main.cpp file. (PMS5003 TX --> ESP RX)
 
 Next steps :- 
-  Save Data to onboard flash (littleFS) as JSON object.
   Allow user to save data some how? (email?, webpage?)
   
 Problems discovered:-
@@ -17,4 +16,5 @@ Problems discovered:-
   
     **PMS5003 TX connection to ESP RX pin** blocks the program uploading through the USB/serial port, disconnect it while programming.
   
+    JSON seralize function appends to the string so clear the string if you use it more than once :( only took 4 hours to debug!!!!
   
