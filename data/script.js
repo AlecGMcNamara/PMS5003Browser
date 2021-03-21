@@ -1,6 +1,5 @@
 var gateway = `ws://${window.location.hostname}/ws`;
 var websocket;
-setInterval(sendMessage, 10000);
 
 window.addEventListener('load', onload);
 function onload(event) {
@@ -26,22 +25,11 @@ function onMessage(event) {
     //set objects on webpage after receiving message from server
     console.log('Browser received message');
     console.log(jsonReceived);
-    plotPMS10(jsonReceived.ReadingTime, jsonReceived.PMS10);
-    plotPMS25(jsonReceived.ReadingTime, jsonReceived.PMS25);
-    plotPMS100(jsonReceived.ReadingTime, jsonReceived.PMS100);
+    var DisplayTime = new Date().getTime() + jsonReceived.ReadingTime ;
+    plotPMS10(DisplayTime, jsonReceived.PMS10);
+    plotPMS25(DisplayTime, jsonReceived.PMS25);
+    plotPMS100(DisplayTime, jsonReceived.PMS100);
 }
-function sendMessage(event) 
-{
-    websocket.send(sendJSONstring());
-    console.log('Browser sent message');
-}
-function sendJSONstring(){
-    //set up JSON message before sending mesage to server
-    var jsonSend = {"ReadingTime":(String)(new Date().getTime()) }; //send readings
-    console.log(jsonSend);
-    return(JSON.stringify(jsonSend));   
-}
-
 // Create PMS1.0 Chart
 var chartPMS10 = new Highcharts.Chart({
   chart:{ renderTo:'chart-PMS10' },
