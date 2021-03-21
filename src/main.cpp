@@ -84,38 +84,84 @@ boolean readPMSdata() {
   return true;
 }
 
+void ChartRedraw(){
+  File fileRead;
+  String fileName;
+  static int RedrawFile = 0;
+  static bool ReDrawing = false;
+  unsigned long tempRecordTime=0;
+  StaticJsonDocument <100> jsonRedraw;
+  String strJsonReDraw;
+  // redraw requested, by browser, send all data from file 0
+  if(blRedraw && ws.availableForWriteAll()){ 
+      if(!ReDrawing){
+        ReDrawing=true;
+        RedrawFile = intFileNumber;   
+      }  
+      fileName = getFileName(RedrawFile);
+      fileRead = LittleFS.open(fileName, "r");
+      if (fileRead){
+        strJsonReDraw = fileRead.readString();
+      //  Serial.print("Reading File:");    Serial.println(strJsonReDraw);
+        deserializeJson(jsonRedraw,strJsonReDraw);
+        tempRecordTime =jsonRedraw["ReadingTime"];
+        jsonRedraw["ReadingTime"] = long(tempRecordTime - millis());
+        strJsonReDraw="";// clear string or serialize function appends the string!!!
+        serializeJson(jsonRedraw,strJsonReDraw);
+        ws.textAll(strJsonReDraw);
+        //Serial.print("Redrawing:"); Serial.println(strJsonReDraw);
+        fileRead.close();
+      }
+      RedrawFile ++;
+      if(RedrawFile==MAX_DATA_FILES) RedrawFile=0;
+      if (RedrawFile == intFileNumber){
+        ReDrawing = false;
+        blRedraw = false;
+      }
+  }
+}
+
+void sendMessage()
+{
+  static unsigned long nextSendDue = 0;
+  if (!blRedraw && nextSendDue < millis() && ws.availableForWriteAll())
+  {
+    StaticJsonDocument<100> jsonSend;
+    // add readings to json object already contains date+time
+    jsonSend["ReadingTime"] = 0;
+    jsonSend["PMS10"] = dataP.pm10_standard;
+    jsonSend["PMS25"] = dataP.pm25_standard;
+    jsonSend["PMS100"] = dataP.pm100_standard;
+
+    String strJsonSend;
+    serializeJson(jsonSend, strJsonSend);
+   // Serial.print("Sending Message:");    Serial.println(strJsonSend);
+    ws.textAll(strJsonSend);
+
+    //write data file to flash filename /data.000-/data.099
+    
+    jsonSend["ReadingTime"] = long(millis());
+
+    strJsonSend = "";
+    serializeJson(jsonSend, strJsonSend);
+    File fileWrite;
+    String fileName = getFileName(intFileNumber);
+    if (fileWrite = LittleFS.open(fileName, "w"))
+    {
+     // Serial.print("Writing File:");    Serial.println(strJsonSend);
+      fileWrite.println(strJsonSend);
+      fileWrite.close();
+      intFileNumber++;
+      nextSendDue = millis()+10000;
+      if (intFileNumber >= MAX_DATA_FILES)
+        intFileNumber = 0;
+    }
+  }
+}
+
 void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
   AwsFrameInfo *info = (AwsFrameInfo*)arg;
-  if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) { 
-    
-    if (!blRedraw) {
-    data[len] = 0;
-    StaticJsonDocument<100> jsonReceived;
-    deserializeJson(jsonReceived,(char*)data);
-     // add readings to json object already contains date+time
-    jsonReceived["PMS10"] = dataP.pm10_standard;
-    jsonReceived["PMS25"] =  dataP.pm25_standard;
-    jsonReceived["PMS100"] = dataP.pm100_standard;
-
-    //debug info can be
-    jsonReceived["NextFileNumber"] = intFileNumber;
-    jsonReceived["Free FS space"] = FreeDiskSpace();
-
-    String jsonString;
-    serializeJson(jsonReceived,jsonString);
-    ws.textAll(jsonString);
-    
-    //write data file to flash filename /data.000-/data.099
-    File fileTest;
-    String fileName = getFileName(intFileNumber);
-    if(fileTest = LittleFS.open(fileName,"w")) { 
-        fileTest.println(jsonString);
-        fileTest.close();
-        intFileNumber++;
-        if(intFileNumber >= MAX_DATA_FILES) intFileNumber = 0;
-    }
-    }
-
+  if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {   
   }
 }
 
@@ -161,31 +207,7 @@ void setup() {
 }
 void loop() {
   readPMSdata();
-  
-  File fileTest;
-  String fileName;
-  // redraw requested, by browser, send all data from file 0
-  if(blRedraw){ 
-    for(int rd=intFileNumber+1;rd<MAX_DATA_FILES;rd++){  
-        fileName = getFileName(rd);
-        fileTest = LittleFS.open(fileName, "r");
-        if (fileTest){
-            ws.textAll(fileTest.readString());
-            delay(100); //needed to add delay or losing data
-            fileTest.close();
-        }
-      }
-    for(int rd=0;rd<intFileNumber;rd++){  
-        fileName = getFileName(rd);
-        fileTest = LittleFS.open(fileName, "r");
-        if (fileTest){
-            ws.textAll(fileTest.readString());
-            delay(100); //needed to add delay or losing data
-            fileTest.close();
-        }
-      }
-  
-      blRedraw = false;
-  }
+  sendMessage();
+  ChartRedraw(); 
   ws.cleanupClients();
 }
