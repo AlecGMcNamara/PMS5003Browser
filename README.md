@@ -8,7 +8,7 @@ Connection details at the top of the main.cpp file. (PMS5003 TX --> ESP RX)
 Next steps :- 
   Allow user to save data some how? (email?, webpage?)
   
-Problems discovered:-
+Problems overcome:-
 
     PMS5003 needs +5V to power the internal fan, a 3.7v battery doesn't work
   
